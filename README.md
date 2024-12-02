@@ -122,6 +122,45 @@ To remember is to resist oblivion. But this act must be ethical. rec-all:
 - Smart resource management
 - Optional CUDA acceleration
 
+## ⚠️ Important Setup Notes
+
+### Directory Selection
+When choosing directories for rec-all, please consider:
+
+- **Installation Directory**:
+  - Choose a location with full read/write permissions
+  - Avoid protected directories (e.g., `Program Files`)
+  - Recommended: Create a dedicated folder in your user directory
+    ```
+    Good: C:\Users\YourName\rec-all
+    Bad:  C:\Program Files\rec-all
+    ```
+
+- **Recording Directory**:
+  - Select a directory with ample storage space
+  - Ensure full read/write permissions
+  - Avoid network drives or cloud-synced folders
+  - Recommended locations:
+    ```
+    Good: D:\Recordings\rec-all
+    Good: C:\Users\YourName\Documents\rec-all-recordings
+    Bad:  C:\Windows\System32\recordings
+    Bad:  C:\Program Files\recordings
+    ```
+
+### Permission Requirements
+Insufficient permissions may cause:
+- Failed screenshot captures
+- OCR processing errors
+- AI description generation failures
+- Unable to save recordings
+- Application crashes
+
+To ensure optimal performance:
+1. Run `setup.bat` as administrator during installation
+2. Grant necessary permissions to both installation and recording directories
+3. Consider creating a dedicated user account with appropriate permissions
+
 ## 🎁 Future Vision
 
 We envision a world where every individual owns their digital shadow. Where data is not the currency of surveillance capitalism but the fabric of personal sovereignty. rec-all is our contribution to that world: a tool for those who wish to live deliberately, remembering deeply, and owning fully.

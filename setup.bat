@@ -131,15 +131,33 @@ if not exist "models\git-base" (
     python -c "from transformers import AutoProcessor, AutoModelForVision2Seq; processor = AutoProcessor.from_pretrained('microsoft/git-base', cache_dir='models/git-base'); model = AutoModelForVision2Seq.from_pretrained('microsoft/git-base', cache_dir='models/git-base')"
 )
 
-:: Create launcher in the same directory as setup.bat
+:: Create launcher with proper icon
 call :colorEcho 0b "Creating launcher..."
 echo.
+
+:: Create VBS script to make shortcut
+(
+echo Set oWS = WScript.CreateObject^("WScript.Shell"^)
+echo sLinkFile = oWS.ExpandEnvironmentStrings^("%~dp0rec-all.lnk"^)
+echo Set oLink = oWS.CreateShortcut^(sLinkFile^)
+echo oLink.TargetPath = "pythonw.exe"
+echo oLink.Arguments = "%~dp0rec-all.py"
+echo oLink.WorkingDirectory = "%~dp0"
+echo oLink.IconLocation = "%~dp0icon.svg"
+echo oLink.Save
+) > "%~dp0create_shortcut.vbs"
+
+:: Execute the VBS script
+cscript //nologo "%~dp0create_shortcut.vbs"
+del "%~dp0create_shortcut.vbs"
+
+:: Create a backup batch file for troubleshooting
 (
 echo @echo off
 echo chcp 65001 ^> nul
 echo title rec-all
-echo python "%~dp0rec-all.py"
-echo if errorlevel 1 (
+echo pythonw.exe "%~dp0rec-all.py"
+echo if errorlevel 1 ^(
 echo     echo An error occurred! Please run setup.bat again.
 echo     pause
 echo     exit /b 1

@@ -27,12 +27,36 @@ except ImportError:
 
 def initialize_reader():
     try:
-        # Initialize for multiple languages
-        reader = easyocr.Reader(['en', 'tr', 'fr', 'es', 'de', 'it', 'pt', 'nl', 'pl', 'ru', 'zh', 'ja', 'ko'])
+        # Initialize with core languages first
+        core_languages = ['en', 'tr']  # Start with English as the base
+        
+        # Try to add additional languages one by one
+        additional_languages = ['fr', 'es', 'de', 'it', 'pt', 'nl']
+        supported_languages = ['en', 'tr']  # Start with English
+        
+        for lang in additional_languages:
+            try:
+                # Test each language individually
+                test_reader = easyocr.Reader([lang])
+                supported_languages.append(lang)
+            except Exception as lang_error:
+                print(f"Language {lang} not supported: {lang_error}")
+        
+        # Initialize reader with all supported languages
+        reader = easyocr.Reader(supported_languages)
+        print(f"EasyOCR initialized with languages: {supported_languages}")
         return reader
+        
     except Exception as e:
         print(f"Error initializing EasyOCR: {e}")
-        return None
+        # Fallback to English-only if there's an error
+        try:
+            reader = easyocr.Reader(['en'])
+            print("Fallback to English-only OCR")
+            return reader
+        except Exception as fallback_error:
+            print(f"Critical error initializing OCR: {fallback_error}")
+            return None
 
 def get_relative_time(timestamp: datetime) -> str:
     return timestamp.strftime('%B %d %A %Y (%H:%M)')

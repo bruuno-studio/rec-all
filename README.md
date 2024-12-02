@@ -24,21 +24,21 @@ rec-all is not just software; it is a revolution. It transforms your computer in
 - 🔐 **Privacy-First**: All processing happens locally on your machine
 
 ## 🌍 Language Support
+rec-all features OCR support for 8 languages:
 
-rec-all features comprehensive OCR support for 13 languages:
+Core Languages:
 - English (en)
 - Turkish (tr)
+
+Additional Languages:
 - French (fr)
 - Spanish (es)
 - German (de)
 - Italian (it)
 - Portuguese (pt)
 - Dutch (nl)
-- Polish (pl)
-- Russian (ru)
-- Chinese (zh)
-- Japanese (ja)
-- Korean (ko)
+
+Note: Language support may vary depending on your system configuration and successful model downloads.
 
 ## 💾 System Requirements
 

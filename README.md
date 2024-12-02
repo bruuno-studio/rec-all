@@ -54,16 +54,17 @@ rec-all features comprehensive OCR support for 13 languages:
 
 1. Clone the repository:
 
-git clone https://github.com/yourusername/rec-all.git
-cd rec-all
+  git clone https://github.com/yourusername/rec-all.git
+
+  cd rec-all
 
 3. Run the setup script:
    
-setup.bat
+  setup.bat
 
 3. Launch the application:
    
-launch.bat
+  launch.bat
 
 
 ## 🎯 Philosophy

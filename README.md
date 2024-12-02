@@ -58,7 +58,7 @@ Note: Language support may vary depending on your system configuration and succe
 
   cd rec-all
 
-3. Run the setup script:
+2. Run the setup script:
    
   setup.bat
 

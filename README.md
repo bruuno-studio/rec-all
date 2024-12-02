@@ -4,6 +4,9 @@
   <p><em>A Time Machine for the Everyday Digital Life</em></p>
 </div>
 
+<div align="center">
+    <img src="https://github.com/user-attachments/assets/ac18baaf-e583-4355-85cd-07a4e934d640" alt="rec-all demo" />
+</div>
 ---
 
 > "In the Age of Fragmentation, Own Your Story. We live in a world saturated by fleeting moments—notifications that vanish, conversations lost to time, memories displaced by the next demand for attention. In this era of ephemera, there is a quiet rebellion: reclaiming not just the right to our data but to our existence as a continuous narrative."

@@ -138,16 +138,36 @@ echo.
 :: Create VBS script to make shortcut
 (
 echo Set oWS = WScript.CreateObject^("WScript.Shell"^)
-echo sLinkFile = oWS.ExpandEnvironmentStrings^("%~dp0rec-all.lnk"^)
+echo sLinkFile = oWS.ExpandEnvironmentStrings^("%USERPROFILE%\Desktop\rec-all.lnk"^)
 echo Set oLink = oWS.CreateShortcut^(sLinkFile^)
 echo oLink.TargetPath = "pythonw.exe"
-echo oLink.Arguments = "%~dp0rec-all.py"
+echo oLink.Arguments = """%~dp0rec-all.py"""
 echo oLink.WorkingDirectory = "%~dp0"
-echo oLink.IconLocation = "%~dp0icon.svg"
+echo oLink.IconLocation = """%~dp0icon.svg"""
+echo oLink.Description = "rec-all - A Time Machine for the Everyday"
+echo oLink.WindowStyle = 1
 echo oLink.Save
 ) > "%~dp0create_shortcut.vbs"
 
 :: Execute the VBS script
+cscript //nologo "%~dp0create_shortcut.vbs"
+del "%~dp0create_shortcut.vbs"
+
+:: Create another shortcut in the installation directory
+(
+echo Set oWS = WScript.CreateObject^("WScript.Shell"^)
+echo sLinkFile = oWS.ExpandEnvironmentStrings^("%~dp0rec-all.lnk"^)
+echo Set oLink = oWS.CreateShortcut^(sLinkFile^)
+echo oLink.TargetPath = "pythonw.exe"
+echo oLink.Arguments = """%~dp0rec-all.py"""
+echo oLink.WorkingDirectory = "%~dp0"
+echo oLink.IconLocation = """%~dp0icon.svg"""
+echo oLink.Description = "rec-all - A Time Machine for the Everyday"
+echo oLink.WindowStyle = 1
+echo oLink.Save
+) > "%~dp0create_shortcut.vbs"
+
+:: Execute the VBS script again for local shortcut
 cscript //nologo "%~dp0create_shortcut.vbs"
 del "%~dp0create_shortcut.vbs"
 
@@ -165,10 +185,13 @@ echo ^)
 echo exit /b 0
 ) > "%~dp0launch.bat"
 
+:: Update success message
 call :colorEcho 0a "Setup completed successfully!"
 echo.
 echo.
-call :colorEcho 0b "Run launch.bat to start rec-all."
+call :colorEcho 0b "Please use the rec-all shortcut on your desktop to start the application."
+echo.
+call :colorEcho 0e "Note: launch.bat is provided for troubleshooting only."
 echo.
 echo.
 pause

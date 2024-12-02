@@ -54,7 +54,7 @@ Note: Language support may vary depending on your system configuration and succe
 
 1. Clone the repository:
 
-  git clone https://github.com/yourusername/rec-all.git
+  git clone https://github.com/bruuno-studio/rec-all.git
 
   cd rec-all
 

@@ -1,7 +1,7 @@
 <div align="center">
   <img src="icon.svg" alt="rec-all Logo" width="120"/>
   <h1>rec-all</h1>
-  <p><em>A Time Machine for the Everyday Digital Life</em></p>
+  <p><em>A Time Machine for the Everyday</em></p>
 </div>
 
 <div align="center">
@@ -67,7 +67,7 @@ Note: Language support may vary depending on your system configuration and succe
 
 3. Launch the application:
    
-  launch.bat
+  rec-all shortcut / launch.bat
 
 
 ## 🎯 Philosophy

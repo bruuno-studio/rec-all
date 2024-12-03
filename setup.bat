@@ -135,64 +135,36 @@ if not exist "models\git-base" (
 call :colorEcho 0b "Creating launcher..."
 echo.
 
-:: Create VBS script to make shortcut
+:: Create shortcut directly using mklink
+set "SHORTCUT_PATH=%~dp0rec-all.lnk"
+set "TARGET_PATH=pythonw.exe"
+set "ARGS=%~dp0rec-all.py"
+set "ICON_PATH=%~dp0icon.ico"
+
+:: Create VBS script for shortcut creation
 (
-echo Set oWS = WScript.CreateObject^("WScript.Shell"^)
-echo sLinkFile = oWS.ExpandEnvironmentStrings^("%USERPROFILE%\Desktop\rec-all.lnk"^)
-echo Set oLink = oWS.CreateShortcut^(sLinkFile^)
-echo oLink.TargetPath = "pythonw.exe"
-echo oLink.Arguments = """%~dp0rec-all.py"""
-echo oLink.WorkingDirectory = "%~dp0"
-echo oLink.IconLocation = """%~dp0icon.svg"""
-echo oLink.Description = "rec-all - A Time Machine for the Everyday"
-echo oLink.WindowStyle = 1
-echo oLink.Save
-) > "%~dp0create_shortcut.vbs"
+echo Set ws = CreateObject^("WScript.Shell"^)
+echo Set link = ws.CreateShortcut^("%SHORTCUT_PATH%"^)
+echo link.TargetPath = "%TARGET_PATH%"
+echo link.Arguments = "%ARGS%"
+echo link.WorkingDirectory = "%~dp0"
+echo link.IconLocation = "%ICON_PATH%"
+echo link.Save
+) > "%TEMP%\shortcut.vbs"
 
-:: Execute the VBS script
-cscript //nologo "%~dp0create_shortcut.vbs"
-del "%~dp0create_shortcut.vbs"
+:: Run VBS script and cleanup
+cscript //nologo "%TEMP%\shortcut.vbs"
+if exist "%TEMP%\shortcut.vbs" del "%TEMP%\shortcut.vbs"
 
-:: Create another shortcut in the installation directory
-(
-echo Set oWS = WScript.CreateObject^("WScript.Shell"^)
-echo sLinkFile = oWS.ExpandEnvironmentStrings^("%~dp0rec-all.lnk"^)
-echo Set oLink = oWS.CreateShortcut^(sLinkFile^)
-echo oLink.TargetPath = "pythonw.exe"
-echo oLink.Arguments = """%~dp0rec-all.py"""
-echo oLink.WorkingDirectory = "%~dp0"
-echo oLink.IconLocation = """%~dp0icon.svg"""
-echo oLink.Description = "rec-all - A Time Machine for the Everyday"
-echo oLink.WindowStyle = 1
-echo oLink.Save
-) > "%~dp0create_shortcut.vbs"
-
-:: Execute the VBS script again for local shortcut
-cscript //nologo "%~dp0create_shortcut.vbs"
-del "%~dp0create_shortcut.vbs"
-
-:: Create a backup batch file for troubleshooting
-(
-echo @echo off
-echo chcp 65001 ^> nul
-echo title rec-all
-echo pythonw.exe "%~dp0rec-all.py"
-echo if errorlevel 1 ^(
-echo     echo An error occurred! Please run setup.bat again.
-echo     pause
-echo     exit /b 1
-echo ^)
-echo exit /b 0
-) > "%~dp0launch.bat"
-
-:: Update success message
-call :colorEcho 0a "Setup completed successfully!"
-echo.
-echo.
-call :colorEcho 0b "Please use the rec-all shortcut on your desktop to start the application."
-echo.
-call :colorEcho 0e "Note: launch.bat is provided for troubleshooting only."
-echo.
+:: Verify shortcut creation
+if exist "%SHORTCUT_PATH%" (
+    call :colorEcho 0a "Setup completed successfully!"
+    echo.
+    echo.
+    call :colorEcho 0b "Please use the rec-all shortcut in the installation folder to start the application."
+) else (
+    call :colorEcho 0c "Warning: Could not create shortcut. You can still run the application using rec-all.py"
+)
 echo.
 pause
 exit /b 0

@@ -62,8 +62,8 @@ def get_relative_time(timestamp: datetime) -> str:
     return timestamp.strftime('%B %d %A %Y (%H:%M)')
 
 def load_app_icon() -> QIcon:
-    """Load the application icon from the SVG file"""
-    icon_path = Path(__file__).parent / "icon.svg"
+    """Load the application icon from the ICO file"""
+    icon_path = Path(__file__).parent / "icon.ico"
     if icon_path.exists():
         return QIcon(str(icon_path))
     return QIcon()  # Return empty icon if file doesn't exist

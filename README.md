@@ -55,20 +55,42 @@ Note: Language support may vary depending on your system configuration and succe
 
 ## 🚀 Installation
 
+### Method 1: Direct Download
+1. Download the latest release from [GitHub Releases](https://github.com/bruuno-studio/rec-all/releases)
+2. Extract the ZIP file to your desired location
+3. Right-click `setup.bat` and select "Run as administrator"
+4. After setup completes, use the `rec-all` shortcut in the installation folder
+
+### Method 2: Using Git
 1. Clone the repository:
-
+```
   git clone https://github.com/bruuno-studio/rec-all.git
-
+```
+2. Open the directory:
+```
   cd rec-all
-
-2. Run the setup script:
-   
+```
+3. Run the setup script:
+```
   setup.bat
-
-3. Launch the application:
+```
+4. Launch the application:
    
-  rec-all shortcut / launch.bat
+  rec-all shortcut
 
+  ## 🚀 Quick Start
+
+1. **First Launch**
+   - Choose recording directory
+   - Select capture interval
+   - Enable desired features (OCR/AI)
+
+2. **Basic Usage**
+   - Start/Stop recording from system tray
+   - View captures in timeline
+   - Search through content
+   - Create time-lapse videos
+   - Export text summaries
 
 ## 🎯 Philosophy
 
@@ -151,7 +173,7 @@ When choosing directories for rec-all, please consider:
     Bad:  C:\Program Files\recordings
     ```
 
-### Permission Requirements
+### ⚠️ Permission Requirements
 Insufficient permissions may cause:
 - Failed screenshot captures
 - OCR processing errors
@@ -163,6 +185,73 @@ To ensure optimal performance:
 1. Run `setup.bat` as administrator during installation
 2. Grant necessary permissions to both installation and recording directories
 3. Consider creating a dedicated user account with appropriate permissions
+
+## 💡 Tips & Best Practices
+
+- **Storage Management**
+  - Regular cleanup of old captures
+  - Use external drive for long-term storage
+
+- **Performance Optimization**
+  - Use CUDA acceleration when available
+
+- **Privacy Considerations**
+  - Pause recording during sensitive tasks
+  - Regular review of captured content
+ 
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**Application Won't Start**
+- Ensure Python is properly installed
+- Run setup.bat as administrator
+- Check Windows Event Viewer for errors
+
+**Black Screenshots**
+- Disable hardware acceleration in your browser
+- Update graphics drivers
+- Check Windows display settings
+
+**OCR Not Working**
+- Ensure language models are downloaded
+- Check internet connection during setup
+- Verify sufficient disk space
+
+**High CPU Usage**
+- Adjust capture interval
+- Disable AI features if not needed
+- Close unnecessary applications
+
+## ❓ FAQ
+
+**Q: How much disk space does rec-all use?**
+  A: Storage usage varies based on:
+  - Screen resolution
+  - Capture interval
+  - Enabled features (OCR/AI)
+  For example, at 1080p with 5-second intervals, expect roughly 70-200MB per hour.
+
+**Q: Does rec-all work with multiple monitors?**
+  A: No, rec-all only captures the main monitor.
+
+**Q: Can I change the capture interval?**
+  A: Yes, you can adjust the interval in the settings menu (minimum: 1 second).
+
+**Q: Does rec-all require internet?**
+  A: Internet is only required during initial setup for downloading language models and AI components. After setup, rec-all works completely offline.
+
+**Q: Where is my data stored?**
+  A: All captures are stored locally in your chosen recording directory.
+
+**Q: Will rec-all start automatically with Windows?**
+  A: No, you need to manually start rec-all each time you want to use it.
+
+**Q: Can I use rec-all without the AI features?**
+  A: Yes, AI features are optional. You can use rec-all with just basic screen capture, or enable OCR without AI descriptions.
+
+**Q: What happens if my computer crashes during recording?**
+  A: rec-all saves each capture independently, so you'll only lose the most recent unsaved capture. Previous captures remain safe.
 
 ## 🎁 Future Vision
 

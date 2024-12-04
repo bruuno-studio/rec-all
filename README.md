@@ -15,6 +15,9 @@
 
 rec-all is not just software; it is a revolution. It transforms your computer into a time machine, meticulously preserving every moment of your digital life—not as a voyeur, but as a loyal historian. Powered by advanced artificial intelligence, rec-all transforms raw data into an indexed, searchable experience.
 
+![rec-all_screenshot](https://github.com/user-attachments/assets/8c1736ac-f38d-43f7-8927-68a1e09c91b4)
+
+
 ## ✨ Features
 
 - 🔄 **Continuous Screen Capture**: Automated, interval-based screen recording

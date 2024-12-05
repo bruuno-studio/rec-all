@@ -5,7 +5,7 @@
 </div>
 
 <div align="center">
-    <img src="https://github.com/user-attachments/assets/ac18baaf-e583-4355-85cd-07a4e934d640" alt="rec-all demo" />
+    <img src="https://github.com/user-attachments/assets/6a9398e2-8aa1-4b11-b145-dc6515430e5c" alt="rec-all demo" />
 </div>
 ---
 
@@ -15,8 +15,7 @@
 
 rec-all is not just software; it is a revolution. It transforms your computer into a time machine, meticulously preserving every moment of your digital life—not as a voyeur, but as a loyal historian. Powered by advanced artificial intelligence, rec-all transforms raw data into an indexed, searchable experience.
 
-![rec-all_screenshot](https://github.com/user-attachments/assets/8c1736ac-f38d-43f7-8927-68a1e09c91b4)
-
+[![rec-all_screenshot](https://github.com/user-attachments/assets/4fcfb7db-c2e6-4631-9edb-888b70cb10cf)](https://www.youtube.com/watch?v=cOWiTRTdnfI)
 
 ## ✨ Features
 

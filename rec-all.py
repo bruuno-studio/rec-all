@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                             QFileDialog, QScrollArea, QFrame, QDialog, QSlider,
                             QCheckBox, QProgressBar, QSystemTrayIcon, QMenu, QTabWidget, QTextEdit,
                             QLayout)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QSize, QPropertyAnimation, QEvent, QEasingCurve, QPoint, QRect, pyqtProperty
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QSize, QPropertyAnimation, QEvent, QEasingCurve, QPoint, QRect, pyqtProperty, QRectF
 from PyQt6.QtGui import QPixmap, QPainter, QColor, QPen, QPainterPath, QIcon, QAction
 from pathlib import Path
 from PyQt6.QtWidgets import QGraphicsOpacityEffect
@@ -177,7 +177,7 @@ class RecordingStatus(QFrame):
         layout.addWidget(self.record_indicator)
         
         text = QLabel("Recording...")
-        text.setStyleSheet("color: #1208ff; font-size: 14px; font-weight: bold;")
+        text.setStyleSheet("color: white; font-size: 14px; font-weight: bold;")
         layout.addWidget(text)
         
         self.features_label = QLabel()
@@ -228,7 +228,7 @@ class BlinkingDot(QWidget):
             painter = QPainter(self)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QColor("#1208ff"))
+            painter.setBrush(QColor("#FF0000"))
             painter.drawEllipse(0, 0, self.width(), self.height())
 
 class ProcessingThread(QThread):
@@ -270,19 +270,29 @@ class ProcessingThread(QThread):
 
 class ScreenCapture(QThread):
     capture_complete = pyqtSignal(str, str, str)
+    initialized = pyqtSignal()  # New signal for initialization complete
     
-    def __init__(self, save_path: str, interval: int = 5, use_ocr: bool = True, use_ai: bool = False):
+    def __init__(self, save_path, interval=5.0, use_ocr=False, use_ai=False):
         super().__init__()
-        self.interval = interval  # Interval in seconds
         self.save_path = save_path
-        self.running = False
+        self.interval = interval
         self.use_ocr = use_ocr
-        self.use_ai = use_ai and AI_AVAILABLE
-        self.describer = None
+        self.use_ai = use_ai
+        self.running = True
+        self.ocr_reader = None
         self.description_queue = []
-        self.ocr_reader = initialize_reader() if use_ocr else None
-        
+
     def run(self):
+        # Initialize OCR if needed
+        if self.use_ocr:
+            self.ocr_reader = initialize_reader()
+            if not self.ocr_reader:
+                print("Failed to initialize OCR")
+                return
+        
+        # Signal that initialization is complete
+        self.initialized.emit()
+        
         self.running = True
         while self.running:
             try:
@@ -368,23 +378,23 @@ class ScreenCapture(QThread):
         if not AI_AVAILABLE:
             return "AI description not available."
         
-        if self.describer is None:
-            self.describer = ImageDescriptionGenerator()
+        if self.ocr_reader is None:
+            self.ocr_reader = initialize_reader()
         
-        return self.describer.generate_description(image_path)
+        return self.ocr_reader.generate_description(image_path)
         
     def process_remaining_descriptions(self):
         if not self.description_queue or not AI_AVAILABLE:
             return
             
         try:
-            if self.describer is None:
-                self.describer = ImageDescriptionGenerator()
+            if self.ocr_reader is None:
+                self.ocr_reader = initialize_reader()
                 
             
             for img_path, desc_path in self.description_queue:
                 if os.path.exists(img_path) and not os.path.exists(desc_path):
-                    description = self.describer.generate_description(img_path)
+                    description = self.ocr_reader.generate_description(img_path)
                     with open(desc_path, 'w', encoding='utf-8') as f:
                         f.write(description)
                     
@@ -395,7 +405,7 @@ class ScreenCapture(QThread):
         except Exception as e:
             print(f"Error processing remaining descriptions: {e}")
         finally:
-            self.describer = None
+            self.ocr_reader = None
 
 class ResultCard(QFrame):
     def __init__(self, metadata: Dict, index: int, on_click, parent=None):
@@ -529,6 +539,10 @@ class ImagePreview(QDialog):
         
         self.setup_ui()
         self.update_display()
+        
+        # Add these variables for window dragging
+        self.dragging = False
+        self.drag_position = None
 
     def setup_ui(self):
         main_layout = QVBoxLayout(self)
@@ -873,6 +887,27 @@ class ImagePreview(QDialog):
             self.close()
         else:
             super().keyPressEvent(event)
+
+    def mousePressEvent(self, event):
+        """Handle mouse press events for window dragging"""
+        if event.button() == Qt.MouseButton.LeftButton:
+            # Only start drag if clicking on the top bar area
+            if event.position().y() < 50:  # Height of top bar
+                self.dragging = True
+                self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+                event.accept()
+
+    def mouseReleaseEvent(self, event):
+        """Handle mouse release events"""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.dragging = False
+            event.accept()
+
+    def mouseMoveEvent(self, event):
+        """Handle mouse move events for window dragging"""
+        if self.dragging and event.buttons() & Qt.MouseButton.LeftButton:
+            self.move(event.globalPosition().toPoint() - self.drag_position)
+            event.accept()
 
 class SmoothScrollArea(QScrollArea):
     def __init__(self, parent=None):
@@ -1557,7 +1592,7 @@ class MainWindow(QMainWindow):
             self.stop_btn.setEnabled(False)
             self.is_processing = True
             
-            # Show processing indicator for both OCR and AI
+            # Show processing indicator
             features = []
             if self.capture_thread.use_ocr:
                 features.append("OCR")
@@ -1569,46 +1604,43 @@ class MainWindow(QMainWindow):
                 self.processing_indicator.status_text = f"Processing {' & '.join(features)}"
                 self.processing_indicator.show()
             
-            # Clear current display while processing
-            while self.scroll_layout.count():
-                child = self.scroll_layout.takeAt(0)
-                if child.widget():
-                    child.widget().deleteLater()
-            
-            # Stop and wait for capture thread
-            self.capture_thread.stop()
-            self.capture_thread.wait()
-            
-            self.recording_status.hide()
-            
-            # Process remaining work
-            if self.capture_thread.use_ai and self.capture_thread.description_queue:
-                if self.processing_thread:
-                    self.processing_thread.wait()
-                
-                self.processing_thread = ProcessingThread(self.capture_thread)
-                self.processing_thread.progress.connect(self.update_processing_progress)
-                self.processing_thread.finished.connect(self.finish_processing)
-                self.processing_thread.start()
-            else:
-                self.finish_processing()
-            
-            # Update tray icon status
-            self.recording_action.setText("Not Recording")
-            
-            # Show notification with app icon
-            self.tray_icon.showMessage(
-                "rec-all",
-                "Screen recording stopped",
-                QIcon(str(Path(__file__).parent / "icon.svg")),
-                2000
-            )
+            # Schedule UI cleanup for next event loop iteration
+            QTimer.singleShot(100, self._cleanup_and_continue_stop)
 
-    def finish_processing(self):
+    def _cleanup_and_continue_stop(self):
+        # Clear current display while processing
+        while self.scroll_layout.count():
+            child = self.scroll_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        
+        # Schedule the next step
+        QTimer.singleShot(100, self._finish_stop_capture)
+
+    def _finish_stop_capture(self):
+        # Stop and wait for capture thread
+        self.capture_thread.stop()
+        self.capture_thread.wait()
+        
+        self.recording_status.hide()
+        
+        # Process remaining work
+        if self.capture_thread.use_ai and self.capture_thread.description_queue:
+            if self.processing_thread:
+                self.processing_thread.wait()
+            
+            self.processing_thread = ProcessingThread(self.capture_thread)
+            self.processing_thread.progress.connect(self.update_processing_progress)
+            self.processing_thread.finished.connect(self._complete_stop_capture)
+            self.processing_thread.start()
+        else:
+            self._complete_stop_capture()
+
+    def _complete_stop_capture(self):
         if self.processing_thread:
             self.processing_thread.wait()
             self.processing_thread = None
-            
+        
         self.processing_indicator.stop_animation()
         self.processing_indicator.hide()
         
@@ -1625,12 +1657,162 @@ class MainWindow(QMainWindow):
         self.ai_checkbox.setEnabled(AI_AVAILABLE)
         self.interval_input.setEnabled(True)
         
-        # Reset processing flag and update display
+        # Reset processing flag
         self.is_processing = False
         
-        # Update the display with all captured content
+        # Update tray icon status
+        self.recording_action.setText("Not Recording")
+        
+        # Show notification
+        self.tray_icon.showMessage(
+            "rec-all",
+            "Screen recording stopped",
+            QIcon(str(Path(__file__).parent / "icon.svg")),
+            2000
+        )
+        
+        # Load folder data with batched processing
         if self.save_path:
-            self.load_folder_data(self.save_path)
+            self.statusBar().showMessage("Loading folder content...")
+            QTimer.singleShot(100, lambda: self._load_folder_batch(0))
+
+    def _load_folder_batch(self, start_index=0, batch_size=50):
+        if start_index == 0:
+            # First batch: initialize lists
+            self.metadata_list.clear()
+            self.filtered_indices.clear()
+            self._temp_image_paths = []
+            
+            # Collect all image paths first
+            for root, _, files in os.walk(self.save_path):
+                for file in files:
+                    if file.endswith(".jpg"):
+                        self._temp_image_paths.append((root, file))
+            
+            if not self._temp_image_paths:
+                self._show_no_content_message()
+                return
+        
+        # Process current batch
+        end_index = min(start_index + batch_size, len(self._temp_image_paths))
+        current_batch = self._temp_image_paths[start_index:end_index]
+        
+        for root, file in current_batch:
+            try:
+                img_path = os.path.join(root, file)
+                date_str = os.path.basename(os.path.dirname(os.path.dirname(img_path)))
+                time_str = file.split("_")[1].split(".")[0]
+                
+                timestamp = datetime.strptime(
+                    f"{date_str} {time_str}",
+                    "%Y-%m-%d %H%M%S"
+                )
+                
+                text_path = os.path.join(
+                    os.path.dirname(os.path.dirname(img_path)),
+                    "texts",
+                    f"text_{time_str}.txt"
+                )
+                desc_path = os.path.join(
+                    os.path.dirname(os.path.dirname(img_path)),
+                    "texts",
+                    f"description_{time_str}.txt"
+                )
+                
+                text_content = ""
+                if os.path.exists(text_path):
+                    try:
+                        with open(text_path, 'r', encoding='utf-8') as f:
+                            text_content = f.read()
+                    except Exception as e:
+                        print(f"Error reading text file {text_path}: {e}")
+                
+                desc_content = ""
+                if os.path.exists(desc_path):
+                    try:
+                        with open(desc_path, 'r', encoding='utf-8') as f:
+                            desc_content = f.read()
+                    except Exception as e:
+                        print(f"Error reading description file {desc_path}: {e}")
+                
+                self.metadata_list.append({
+                    "image_path": img_path,
+                    "text_content": text_content,
+                    "description_content": desc_content,
+                    "timestamp": timestamp,
+                    "relative_time": get_relative_time(timestamp)
+                })
+            
+            except Exception as e:
+                print(f"Error processing file {file}: {e}")
+                continue
+        
+        # Update progress
+        progress = min(100, int(end_index / len(self._temp_image_paths) * 100))
+        self.statusBar().showMessage(f"Loading folder content... {progress}%")
+        
+        # Schedule next batch or finish
+        if end_index < len(self._temp_image_paths):
+            QTimer.singleShot(50, lambda: self._load_folder_batch(end_index))
+        else:
+            QTimer.singleShot(50, self._finish_loading_folder)
+
+    def _finish_loading_folder(self):
+        # Clean up temporary storage
+        if hasattr(self, '_temp_image_paths'):
+            del self._temp_image_paths
+        
+        # Sort and update display
+        self.metadata_list.sort(key=lambda x: x['timestamp'], reverse=True)
+        self.filtered_indices = list(range(len(self.metadata_list)))
+        self.update_results()
+        
+        # Update status and enable buttons
+        self.statusBar().showMessage(f"Loaded {len(self.metadata_list)} images", 3000)
+        self.recaption_btn.setEnabled(bool(self.metadata_list) and AI_AVAILABLE)
+        self.merge_btn.setEnabled(bool(self.metadata_list))
+
+    def _show_no_content_message(self):
+        no_content = QWidget()
+        no_content_layout = QVBoxLayout(no_content)
+        
+        icon_label = QLabel("📁")
+        icon_label.setStyleSheet("""
+            QLabel {
+                color: #666;
+                font-size: 48px;
+                margin-bottom: 10px;
+            }
+        """)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        message_label = QLabel("No images found in this folder")
+        message_label.setStyleSheet("""
+            QLabel {
+                color: #888;
+                font-size: 16px;
+                margin-bottom: 5px;
+            }
+        """)
+        message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        hint_label = QLabel("Start capturing or select a different folder")
+        hint_label.setStyleSheet("""
+            QLabel {
+                color: #666;
+                font-size: 14px;
+            }
+        """)
+        hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        no_content_layout.addStretch()
+        no_content_layout.addWidget(icon_label)
+        no_content_layout.addWidget(message_label)
+        no_content_layout.addWidget(hint_label)
+        no_content_layout.addStretch()
+        
+        self.scroll_layout.addWidget(no_content)
+        self.statusBar().showMessage("No images found in folder", 3000)
 
     def handle_capture(self, img_path: str, text_content: Optional[str], desc_content: Optional[str]):
         timestamp = datetime.now()
@@ -2264,7 +2446,7 @@ class MainWindow(QMainWindow):
             </h2>
             <p style="margin-bottom: 20px;">
                 AI powers rec-all, but it does not control it. You remain the master of your 
-                archive. The AI is your assistant, not your ruler—its role is to illuminate 
+                archive. The AI is your assistant, not your ruler���its role is to illuminate 
                 patterns, reveal connections, and make your recorded history accessible without 
                 dictating its importance.
             </p>
@@ -2515,13 +2697,54 @@ class SplashScreen(QWidget):
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         
-        # Get screen size for centering
+        # Get screen size
         screen = QApplication.primaryScreen().geometry()
-        self.setGeometry(0, 0, screen.width(), screen.height())
+        screen_center = screen.center()
         
-        # Load SVG icon
-        self.icon_path = Path(__file__).parent / "icon.svg"
-        self.icon_size = 200  # Size of the icon
+        # Set splash screen size
+        splash_size = 600  # Reduced from 800 to 600
+        self.setFixedSize(splash_size, splash_size)
+        
+        # Center splash screen on screen
+        self.move(
+            screen_center.x() - (splash_size // 2),
+            screen_center.y() - (splash_size // 2)
+        )
+        
+        # Create layout
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(5)
+        
+        # Create label for icon
+        self.icon_label = QLabel(self)
+        self.icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # Load and set icon
+        icon_path = str(Path(__file__).parent / "icon.svg")
+        if os.path.exists(icon_path):
+            pixmap = QPixmap(icon_path)
+            scaled_pixmap = pixmap.scaled(
+                400, 400,  # Reduced from 600 to 400
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
+            self.icon_label.setPixmap(scaled_pixmap)
+        
+        layout.addWidget(self.icon_label)
+        
+        # Add app name label
+        name_label = QLabel("rec-all", self)
+        name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        name_label.setStyleSheet("""
+            QLabel {
+                color: white;
+                font-size: 48px;
+                font-weight: bold;
+                margin-top: 0px;
+            }
+        """)
+        layout.addWidget(name_label)
         
         # Setup opacity effect
         self.opacity_effect = QGraphicsOpacityEffect()
@@ -2530,40 +2753,34 @@ class SplashScreen(QWidget):
         
         # Create fade in animation
         self.fade_in = QPropertyAnimation(self.opacity_effect, b"opacity")
-        self.fade_in.setDuration(1000)  # 1 second fade in
+        self.fade_in.setDuration(1000)
         self.fade_in.setStartValue(0)
         self.fade_in.setEndValue(1)
         self.fade_in.setEasingCurve(QEasingCurve.Type.OutCubic)
         
         # Create fade out animation
         self.fade_out = QPropertyAnimation(self.opacity_effect, b"opacity")
-        self.fade_out.setDuration(800)  # 0.8 second fade out
+        self.fade_out.setDuration(800)
         self.fade_out.setStartValue(1)
         self.fade_out.setEndValue(0)
         self.fade_out.setEasingCurve(QEasingCurve.Type.InCubic)
-    
-    def showEvent(self, event):
-        self.fade_in.start()
-        super().showEvent(event)
-    
-    def start_fade_out(self):
-        self.fade_out.start()
-    
+        
+        # Connect fade out animation finished signal
+        self.fade_out.finished.connect(self.close)
+        
     def paintEvent(self, event):
-        if self.icon_path.exists():
-            painter = QPainter(self)
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            
-            # Load and scale SVG
-            icon = QIcon(str(self.icon_path))
-            pixmap = icon.pixmap(self.icon_size, self.icon_size)
-            
-            # Calculate center position
-            x = (self.width() - pixmap.width()) // 2
-            y = (self.height() - pixmap.height()) // 2
-            
-            # Draw icon
-            painter.drawPixmap(x, y, pixmap)
+        """Override paint event to create rounded corners and background"""
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        # Create rounded rectangle path
+        path = QPainterPath()
+        # Convert QRect to QRectF
+        rect = QRectF(self.rect())
+        path.addRoundedRect(rect, 20, 20)
+        
+        # Set background color
+        painter.fillPath(path, QColor("#222222"))
 
 def main():
     app = QApplication(sys.argv)
@@ -2573,30 +2790,33 @@ def main():
     if not app_icon.isNull():
         app.setWindowIcon(app_icon)
     
-    # Create and show splash screen
+    # Create splash screen
     splash = SplashScreen()
-    splash.opacity_effect.setOpacity(0)  # Start fully transparent
     splash.show()
-    splash.fade_in.start()  # Start fade-in animation
     
     # Create main window but don't show it yet
-    window = MainWindow()
-    window.prepare_fade_in()  # Prepare fade in effect
+    main_window = MainWindow()
     
-    # Setup timer to handle the transition
-    def handle_transition():
-        splash.start_fade_out()
-        window.show()
-        
-        # Close splash screen after fade out
-        def close_splash():
-            splash.close()
-        splash.fade_out.finished.connect(close_splash)
+    # Start fade in animation for splash
+    splash.fade_in.start()
     
-    # Start transition after 2 seconds
-    QTimer.singleShot(2000, handle_transition)
+    # Create timer to start fade out after 2 seconds
+    QTimer.singleShot(2000, lambda: handle_splash_transition(splash, main_window))
     
-    sys.exit(app.exec())
+    return app.exec()
+
+def handle_splash_transition(splash, main_window):
+    # Start fade out animation
+    splash.fade_out.start()
+    
+    # Show main window after fade out animation completes
+    splash.fade_out.finished.connect(lambda: complete_transition(main_window))
+
+def complete_transition(main_window):
+    # Prepare fade in effect for main window
+    main_window.prepare_fade_in()
+    # Show main window
+    main_window.show()
 
 if __name__ == '__main__':
     main()
